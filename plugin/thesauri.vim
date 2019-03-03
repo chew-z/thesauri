@@ -4,33 +4,44 @@
 " License: GPLv2
 " Last Modified: 2012-07-12
 
-fun! CompleteThesauri(findstart, base)
+" omnifunc for Thesaurus suggestions (better then built-in <C-xC-t>)
+" I am setting thesaurus files per buffer not as global
+" And I use moby thesaurus which has different format then Vim expects
+" see https://github.com/vim/vim/issues/1611
+" Oh, and I use this function as omnifunc not completefunc 
+function! CompleteThesauri(findstart, base)
     if a:findstart
-        let line = getline('.')
-        let start = col('.') - 1
-        while start > 0 && line[start - 1] =~ '\a'
-            let start -= 1
+        let l:line = getline('.')
+        let l:start = col('.') - 1
+        while l:start > 0 && l:line[l:start - 1] !~# '\s'
+            let l:start -= 1
         endwhile
-        return start
+        return l:start
     else
-        if has("win32")
-            let output = system("findstr /b \"" . a:base . ",\" " . g:mobythesaurus_file)
-        else
-            let output = system("grep \"^" . a:base . ",\" " . g:mobythesaurus_file)
-        endif
-
-        if v:shell_error
+        if !exists('b:mobythesaurus_file')
             return []
         else
-            let res = []
-            for l in split(output, "\n")
-                let k = substitute(l, "[^,]\\+,", "", "")
-                for i in split(k, ",")
-                    call add(res, i)
+            " First version is loose and second is tight check fot yourself,
+            " awk filters out unique results
+            " Try for yourself in shell
+            " rg -N "^([\\w\\s]+)?samolot([\\w\\s]+)?" .vim/spell/pl.thes.txt | tr ',' '\n'
+            let l:query ="rg -N --color never \"^([\\w\\s]+)?" . a:base . "([\\w\\s]+)?,\" " . b:mobythesaurus_file . "| tr \",\" \"\\n\" | awk \'{ if (\!($0 in seen)) print $0; seen[$0] = 1; }\'"
+            " let l:query ="rg -N --color never \"^([\\w\\s]+)?" . a:base . "([\\w\\s]+)?,\" " . b:mobythesaurus_file . "| tr \",\" \"\\n\" "
+            "  rg -N "^samolot," .vim/spell/pl.thes.txt | tr ',' '\n'
+            " let l:query ="rg -N --color never \"^" . a:base . ",\" " . b:mobythesaurus_file . "| tr \",\" \"\\n\" "
+            let l:output = system(l:query)
+            if v:shell_error > 1
+                return []
+            elseif v:shell_error == 1
+                return []
+            else
+                let l:matches = []
+                for l:m in split(l:output, "\n")
+                    call add(l:matches, l:m)
                 endfor
-            endfor
-            return res
-        endif
+                return {'words': l:matches, 'refresh': 'always'}
+            endif
+       endif
     endif
 endfun
-
+"
