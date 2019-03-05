@@ -1,7 +1,9 @@
 Thesauri
 --------
 
-So I had been using [thesauri](http://github.com/tomku/thesauri) plugin for over two years and making some small adjustments. Finally I have decided to fork and commit my take.
+Vim omnifunction that suggests alternative words from thesaurus. Works locally per buffer and allow toggling between languages.
+
+So I had been using [thesauri](http://github.com/tomku/thesauri) plugin for over two years now and making some small adjustments. Finally I have decided to fork and commit my take.
 
 ## Installation
 
@@ -26,7 +28,7 @@ In Insert mode Control+L <C-l> toggles available languages
 
 `g:thesauri_map_key - default 1 - use thesauri key mappings (<C-l>)`
 
-`g:thesauri_mode - default 0 - toggle between tight matching and more loose one`
+`g:thesauri_mode - default 0 - toggle between tight matching and more loose one. The later gives funny results.`
 
 ## How it works?
 
