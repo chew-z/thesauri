@@ -28,23 +28,21 @@ function! thesauri#ToggleSpellLang()
     if  index(s:fts, &filetype) == -1 " only text or markdown (or add to g:thesauri_filetypes)
         echom 'wrong filetype for prose writing'
     else
-        if !exists( 'b:myLang')
-            if &spell | let b:myLang = index(s:myLangList, &spelllang) | endif
-        endif
+        if !exists( 'b:myLang') | let b:myLang = index(s:myLangList, &spelllang) | endif
         let b:myLang += 1
         if b:myLang >= len(s:myLangList) | let b:myLang = 0 | endif
-        if b:myLang == 0
+        execute 'setlocal spelllang =' . get(s:myLangList, b:myLang, 'pl')
+        if b:myLang
+            let b:thesauri_file=$HOME . '/.vim/spell/' . &spelllang . '.thes.txt'
+            setlocal omnifunc=thesauri#OmniThesauri
+            setlocal spell
+        else
             set omnifunc=syntaxcomplete#Complete
             setlocal nospell
-        else
-            execute 'setlocal spell spelllang =' . get(s:myLangList, b:myLang, 'pl')
-            let s:spelllang = get(s:myLangList, b:myLang, 'pl')
-            let b:mobythesaurus_file=$HOME . '/.vim/spell/' . s:spelllang . '.thes.txt'
-            setlocal omnifunc=thesauri#OmniThesauri
         endif
         highlight clear SpellBad
         highlight SpellBad cterm=underline
-        echom 'language:' get(s:myLangList, b:myLang)
+        echom 'language:' &spelllang
     endif
 endfunction
 "
@@ -61,17 +59,17 @@ function! thesauri#OmniThesauri(findstart, base)
             echom 'Ripgrep not found in path'
             return []
         endif
-        if !exists('b:mobythesaurus_file')
+        if !exists('b:thesauri_file')
             return []
         else
             " First version is loose matching and second [default] is tight check fot yourself
             " rg -N "^([\\w\\s]+)?samolot([\\w\\s]+)?" .vim/spell/pl.thes.txt | tr ',' '\n'
             if g:mobythesaurus_mode
                 " match word anywhere in the line
-                let l:query ="rg -wN --color never " . tolower(a:base) . " " . b:mobythesaurus_file . "| tr \",\" \"\\n\" | awk \'{ if (\!($0 in seen)) print $0; seen[$0] = 1; }\'"
+                let l:query ="rg -wN --color never " . tolower(a:base) . " " . b:thesauri_file . "| tr \",\" \"\\n\" | awk \'{ if (\!($0 in seen)) print $0; seen[$0] = 1; }\'"
             else
                 " match first word in the line
-                let l:query ="rg -wN --color never \"^" . tolower(a:base) . "\" " . b:mobythesaurus_file . "| tr \",\" \"\\n\" "
+                let l:query ="rg -wN --color never \"^" . tolower(a:base) . "\" " . b:thesauri_file . "| tr \",\" \"\\n\" "
             endif
             let l:output = system(l:query)
             if v:shell_error > 1
