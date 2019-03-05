@@ -31,11 +31,10 @@ function! thesauri#ToggleSpellLang()
         if !exists( 'b:myLang') | let b:myLang = index(s:myLangList, &spelllang) | endif
         let b:myLang += 1
         if b:myLang >= len(s:myLangList) | let b:myLang = 0 | endif
-        execute 'setlocal spelllang =' . get(s:myLangList, b:myLang, 'pl')
+        execute 'setlocal spell spelllang =' . get(s:myLangList, b:myLang, 'pl')
         if b:myLang
             let b:thesauri_file=$HOME . '/.vim/spell/' . &spelllang . '.thes.txt'
             setlocal omnifunc=thesauri#OmniThesauri
-            setlocal spell
         else
             set omnifunc=syntaxcomplete#Complete
             setlocal nospell
