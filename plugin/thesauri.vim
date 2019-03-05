@@ -35,8 +35,14 @@ function! thesauri#ToggleSpellLang()
         if b:myLang
             let b:thesauri_file=$HOME . '/.vim/spell/' . &spelllang . '.thes.txt'
             setlocal omnifunc=thesauri#OmniThesauri
+            setlocal complete+=kspell
+            setlocal complete+=s
+            execute 'setlocal thesaurus =' . b:thesauri_file
         else
             set omnifunc=syntaxcomplete#Complete
+            setlocal complete-=s
+            setlocal complete-=kspell
+            execute 'setlocal thesaurus = '
             setlocal nospell
         endif
         highlight clear SpellBad
