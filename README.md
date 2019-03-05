@@ -1,39 +1,56 @@
 Thesauri
 --------
 
-[Homepage](http://github.com/tomku/thesauri)
+So I had been using [thesauri](http://github.com/tomku/thesauri) plugin for over two years and making some small adjustments. Finally I have decided to fork and commit my take.
 
-This is a simple plugin that integrates an external thesaurus file into vim's
-user completion function mechanism.  I wrote it because I was unhappy with
-vim's default thesaurus (see :help 'thesaurus'), which dealt poorly with all
-of the plain-text thesaurus word lists I could find online.  Starting from the
-excellent (albeit perhaps overly comprehensive) [Moby Project](http://icon.shef.ac.uk/Moby/)'s thesaurus,
-I tried to come up with a way to get it into vim with minimal modifications.
+## Installation
 
-Unfortunately their file uses ancient Mac line endings that make it a pain to
-grep through.  You can use the following Perl command to fix the line endings
-in the Moby thesaurus, but be sure to redirect it unless you like 24mb of text
-dumped into your terminal.
+Using [vim-plug](https://github.com/junegunn/vim-plug):
 
-    perl -ple 's/\r?\n|\r/\n/g' mobythes.aur > newfile
+`Plug 'chew-z/thesauri' `
 
-The resulting file is happily processed by both GNU grep and Microsoft's
-findstr.exe, and hopefully other grep utilities too.  Any other method that
-converts line endings to Unix should also be sufficient to make it usable.
+## Requirements
 
-When you have your thesaurus file processed, store it somewhere safe and point
-`g:mobythesaurus_file` at it like so:
+- You should have [ripgrep](https://github.com/BurntSushi/ripgrep) installed and added to path, otherwise Thesauri will fail silently.
+- Thesauri expects to find thesaurus files at $HOME/.vim/spell/[LANGUAGE].thes.txt
 
-    let g:mobythesaurus_file = $HOME . "/.vim/mobythesaur-vim.txt"
+## Mapping keys
 
-It'd probably also be helpful to set `completefunc` to CompleteThesauri so
-that you can actually use the function, like so:
+In Insert mode Control+L <C-l> toggles available languages
 
-    set completefunc=CompleteThesauri
+## Global variables
 
-Once everything is set up, you can invoke thesaurus completion via your user
-completion hotkey, Ctrl-x Ctrl-u by default.  This leaves the default thesaurus
-functionality untouched, in case you use it for other purposes.
+`g:thesauri_languages - default ['', 'pl', 'en'] - available languages`
 
-As the included LICENSE file indicates, this plugin is released under the GPLv2
-license.
+`g:thesauri_filetypes - default ['text', 'markdown', 'mail', 'notes'] - file formats for which thesauri could be activated`
+
+`g:thesauri_map_key - default 1 - use thesauri key mappings (<C-l>)`
+
+`g:thesauri_mode - default 0 - toggle between tight matching and more loose one`
+
+## How it works?
+
+Thesauri sets omnifunc = thesauri#OmniThesauri locally per buffer. So it is possible to open multiple buffers with different languages. Imagine writing README file in English, having open mail in your native language and some documentation where you don't won't highlighte misspellings or any other language features.
+
+Thesaurus suggestions are under <C-xC-o> in insert mode leaving default Vim thesaurus shortcut <C-xC-t> untouched. There are [reasons for that](https://github.com/vim/vim/issues/1611) - Vim expects format that isn't compatible with most thesaurus files and Vim's thesaurus function cannot be modified.
+
+You can also have suggestions under <Tab> using some version of CleverTab function.
+
+```viml
+function! CleverTab()
+    if pumvisible()
+        return "\<C-n>"
+    endif
+    let l:col = col('.') - 1
+    if !l:col || getline('.')[l:col - 1] !~# '\k'
+        return "\<Tab>"
+    elseif col('.')>1 && strpart( getline('.'), col('.')-2, 3 ) =~# '^\w'
+        if exists('&omnifunc') && &omnifunc ==# 'thesauri#OmniThesauri'
+            return "\<C-x>\<C-o>"
+        else
+            return "\<C-r>=completor#do('complete')\<CR>"
+        endif
+    endif
+endfunction
+```
+

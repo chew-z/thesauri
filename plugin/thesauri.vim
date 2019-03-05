@@ -12,8 +12,8 @@
 " see https://github.com/vim/vim/issues/1611
 " Oh, and I use this function as omnifunc not completefunc
 
-if !exists('g:mobythesaurus_mode') | let g:mobythesaurus_mode = 0 | endif
-let s:myLangList = exists('g:thesauriLangList') ? g:thesauriLangList : [ '', 'pl', 'en']
+if !exists('g:thesauri_mode') | let g:thesauri_mode = 0 | endif
+let s:myLangList = exists('g:thesauri_languages') ? g:thesauri_languages : [ '', 'pl', 'en']
 let s:fts = exists('g:thesauri_filetypes') ? g:thesauri_filetypes : ['text', 'mail', 'markdown', 'notes']
 
 if !exists('g:thesauri_map_keys')
@@ -64,7 +64,7 @@ function! thesauri#OmniThesauri(findstart, base)
         else
             " First version is loose matching and second [default] is tight check fot yourself
             " rg -N "^([\\w\\s]+)?samolot([\\w\\s]+)?" .vim/spell/pl.thes.txt | tr ',' '\n'
-            if g:mobythesaurus_mode
+            if g:thesauri_mode
                 " match word anywhere in the line
                 let l:query ="rg -wN --color never " . tolower(a:base) . " " . b:thesauri_file . "| tr \",\" \"\\n\" | awk \'{ if (\!($0 in seen)) print $0; seen[$0] = 1; }\'"
             else
