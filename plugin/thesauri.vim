@@ -13,8 +13,8 @@
 " Oh, and I use this function as omnifunc not completefunc
 
 if !exists('g:mobythesaurus_mode') | let g:mobythesaurus_mode = 0 | endif
-let s:myLangList = exists('g:myLangList') ? g:myLangList : [ '', 'pl', 'en']
-let s:fts = exists('g:fts') ? g:fts : ['text', 'mail', 'markdown', 'notes']
+let s:myLangList = exists('g:thesauriLangList') ? g:thesauriLangList : [ '', 'pl', 'en']
+let s:fts = exists('g:thesauri_filetypes') ? g:thesauri_filetypes : ['text', 'mail', 'markdown', 'notes']
 
 if !exists('g:thesauri_map_keys')
     let g:thesauri_map_keys = 1
@@ -25,7 +25,7 @@ if g:thesauri_map_keys
 endif
 
 function! thesauri#ToggleSpellLang()
-    if  index(s:fts, &filetype) == -1 " only text or markdown (or add to g:fts)
+    if  index(s:fts, &filetype) == -1 " only text or markdown (or add to g:thesauri_filetypes)
         echom 'wrong filetype for prose writing'
     else
         if !exists( 'b:myLang')
@@ -36,31 +36,11 @@ function! thesauri#ToggleSpellLang()
         if b:myLang == 0
             set omnifunc=syntaxcomplete#Complete
             setlocal nospell
-            setlocal complete-=kspell
-            setlocal complete-=s
-            set spellsuggest=
         else
             execute 'setlocal spell spelllang =' . get(s:myLangList, b:myLang, 'pl')
-            " In Insert just Ctrl-N or Ctrl-P gives suggestions from current
-            " dict and thes if set so
-            setlocal complete+=kspell
-            " complete+=s makes autocompletion include results the current thesaurus
-            setlocal complete+=s
-            set completeopt=menu,longest
-            let g:mobythesaurus_mode = 0
+            let s:spelllang = get(s:myLangList, b:myLang, 'pl')
+            let b:mobythesaurus_file=$HOME . '/.vim/spell/' . s:spelllang . '.thes.txt'
             setlocal omnifunc=thesauri#OmniThesauri
-            if b:myLang == 1
-                set spellsuggest=fast,5 " try fast for non-English
-                setlocal spellfile=$HOME/.vim/spell/pl.utf-8.add
-                setlocal thesaurus=$HOME/.vim/spell/pl.thes.txt
-                let b:mobythesaurus_file=$HOME . '/.vim/spell/pl.thes.txt'
-            elseif b:myLang == 2
-                set spellsuggest=best,5 " try best for English
-                setlocal spellfile=$HOME/.vim/spell/en.utf-8.add
-                setlocal thesaurus=$HOME/.vim/spell/en.mobythes.txt
-                let b:mobythesaurus_file=$HOME . '/.vim/spell/en.mobythes.txt'
-            endif
-            call vim_you_autocorrect#enable_autocorrect()
         endif
         highlight clear SpellBad
         highlight SpellBad cterm=underline
@@ -77,6 +57,10 @@ function! thesauri#OmniThesauri(findstart, base)
         endwhile
         return l:start
     else
+        if !executable('rg')
+            echom 'Ripgrep not found in path'
+            return []
+        endif
         if !exists('b:mobythesaurus_file')
             return []
         else
@@ -85,9 +69,6 @@ function! thesauri#OmniThesauri(findstart, base)
             if g:mobythesaurus_mode
                 " match word anywhere in the line
                 let l:query ="rg -wN --color never " . tolower(a:base) . " " . b:mobythesaurus_file . "| tr \",\" \"\\n\" | awk \'{ if (\!($0 in seen)) print $0; seen[$0] = 1; }\'"
-                " let l:query ="rg -N --color never \"^([\\w\\s]+)?" . tolower(a:base) . "([\\w\\s]+)?,\" " . b:mobythesaurus_file . "| tr \",\" \"\\n\" | awk \'{ if (\!($0 in seen)) print $0; seen[$0] = 1; }\'"
-            " let l:query ="rg -N --color never \"^([\\w\\s]+)?" . a:base . "([\\w\\s]+)?,\" " . b:mobythesaurus_file . "| tr \",\" \"\\n\" "
-            "  rg -N "^samolot," .vim/spell/pl.thes.txt | tr ',' '\n'
             else
                 " match first word in the line
                 let l:query ="rg -wN --color never \"^" . tolower(a:base) . "\" " . b:mobythesaurus_file . "| tr \",\" \"\\n\" "
@@ -107,4 +88,3 @@ function! thesauri#OmniThesauri(findstart, base)
        endif
     endif
 endfun
-"
